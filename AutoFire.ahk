@@ -73,7 +73,7 @@ SendP:
     Click, 960, 630
     ; ready up after match
     Click, 1875, 1060
-    Click, 1800, 840
+    Click, 1800, 760
 
     ; random movements
     Random, rand , 1, 4
