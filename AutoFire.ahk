@@ -1,17 +1,24 @@
 ; auto fire script for Logitech G502
 ; use fuction keys as toggles or triggers
 
+#NoEnv  ; Recommended for performance and compatibility with future AutoHotkey releases.
+; #Warn  ; Enable warnings to assist with detecting common errors.
+SendMode Input  ; Recommended for new scripts due to its superior speed and reliability.
+SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
+
+
 ; set click interval in ms
-SetTimer, lClick, 50
+SetTimer, lClick, 25
 SetTimer, rClick, 50
-SetTimer, AltFire, 50
-SetTimer, SendP, 2000
+SetTimer, AltFire, 500
+SetTimer, SendP, 2500
 ;SetTimer, Enter, 5
 
 movements := ["w", "a", "s", "d"]
+
 ammo_rio := 6
-ammo_2 := 2
-ammo := %ammo_rio%
+ammo_2 := 1
+ammo = %ammo_2%
 counter = %ammo%
 
 ; hold to use alt fire
@@ -27,12 +34,18 @@ counter = %ammo%
 *F9 UP::aToggle := 0
 
 ; toggle to fire
-; F10::lToggle := !lToggle
+F6::lToggle := !lToggle
 
 ; F10::eToggle := !eToggle
 
 ; send P for ready, for fortnite BR
-F10::pToggle := !pToggle
+^k::pToggle := !pToggle
+
+
+F5::
+    Send {Escape}
+    CoordMode, Mouse, Screen
+    Click, 2400, 460
 
 ; click funct
 rClick:
@@ -51,32 +64,51 @@ SendP:
         return
     Send {p}
     ;Sleep, 1000
-    Click
+    
+    CoordMode, Mouse, Screen
+    ; battle pass gif claim click
+    Click, 1065, 939
+    ; there are times random error popup stopping the game, just need to hit continue
+    Click, 960, 700
+    Click, 960, 630
+    ; ready up after match
+    Click, 1875, 1060
+    Click, 1800, 840
+
+    ; random movements
     Random, rand , 1, 4
     movement := movements[rand]
-
     ;MsgBox, Value Is: %movement%
     Send {%movement% down}
-    if (rand == 1)
-        Send {space}
+    if (rand == 1){
         Sleep, 1000
+        Send {esc}
+        Sleep, 500
+        Send {esc}
+    }
     Sleep, 1000
+    ;Send {esc}
+    Send {space}
     Send {%movement% up}
     return
 
+; altFire mode
 AltFire:
-    If (!aToggle)
+    global counter
+    If (!aToggle){
         counter = %ammo%
         return
-    If (counter == %ammo%)
-        counter = 0
-        Send {r}
+    }
     Click
+    If (counter >= ammo) {
+        counter := 0
+        Send {r}
+    }
+    ;send {%counter%}
+    ;MsgBox, Value Is: %ammo%
     counter++
     return
-        
-
-    
+   
 ; Send Enter
 ; Enter:
 ;     If (!eToggle)
