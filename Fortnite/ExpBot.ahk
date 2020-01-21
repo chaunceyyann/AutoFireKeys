@@ -52,7 +52,7 @@ SendP:
     ; ready up after match
     Click, 1875, 1060
     Sleep, 10
-    Click, 1800, 760
+    Click, 1800, 800
     Sleep, 10
 
     ; random movements
