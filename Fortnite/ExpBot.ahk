@@ -14,7 +14,7 @@ Please choose a toggle key below. (Automatically save to config.ini)
 Select game mode (E.g. Team Ramble) before toggle this script on.
 )
 Gui, Add, Text,, %Instruction%
-Gui, Add, Hotkey, vToggleKey w160, %ToggleKey%
+Gui, Add, Hotkey, vToggleKey w240, %ToggleKey%
 Gui, Add, Button, w80 x+5, OK
 Gui, Show,, Fortnite EXP Farming (1080P)
 
