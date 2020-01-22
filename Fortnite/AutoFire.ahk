@@ -98,17 +98,20 @@ LeftClick:
 return
 
 LeftClickUp:
+    Click, Up
     lToggle := 0
 return
 
 LeftToggle:
     lToggle := !lToggle
+    Click, Up
 return
 
 lClick:
     if (!lToggle)
     Return
-Click
+Click, Up
+Click, Down
 return
 
 ; Right Clicks
