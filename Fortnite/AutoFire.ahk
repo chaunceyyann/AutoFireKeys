@@ -12,14 +12,14 @@ IniRead, RavagerHold, config.ini, settings, RavagerKeybind, %A_Space%
 IniRead, RioHold, config.ini, settings, RioKeybind, %A_Space%
 IniRead, LeaveBR, config.ini, settings, LeaveBrKeybind, %A_Space%
 IniRead, LeaveSTW, config.ini, settings, LeaveStwKeybind, %A_Space%
-Gui, Add, Text, , Set hotkeys for below macros, press <space> to remove keybind
+Gui, Add, Text, , Set hotkeys for below macros, `npress <space> to remove keybind
 Gui, Add, Text, , Left click - Hold (Semi-Auto to Auto)
 Gui, Add, Hotkey, vAutoHold w160, %AutoHold%
 Gui, Add, Text, , Left click - Toggle (Open multiple Llamas)
 Gui, Add, Hotkey, vLlamasToggle w160, %LlamasToggle%
 Gui, Add, Text, , Jump then heavy attack (SK Ravager)
 Gui, Add, Hotkey, vRavagerHold w160, %RavagerHold%
-Gui, Add, Text, , Fire 6 shots then reload (Firstshot Rio)
+Gui, Add, Text, , Fire 6 shots then reload (Firstshot Rio with Hydra)
 Gui, Add, Hotkey, vRioHold w160, %RioHold%
 Gui, Add, Text, , Quick leave BR game
 Gui, Add, Hotkey, vLeaveBR w160, %LeaveBR%
@@ -39,54 +39,57 @@ ButtonOK:
     IniWrite, %LeaveBR%, config.ini, settings, LeaveBrKeybind
     IniWrite, %LeaveSTW%, config.ini, settings, LeaveStwKeybind
     
-    Instruction =
-    (
-    Auto Firing Mode Activated!
-    User <Space> to remove unwanted hotkeys.
-    %AutoHold%: Hold to left click (Semi-auto to Auto)
-    %LlamasToggle%: Toggle to left click (Open Llamas)
-    %RavagerHold%: Hold to jump then right click (SK Ravager)
-    %RioHold%: Hold to fire 6 shots then reload (Firstshot Rio)
-    %LeaveBR%: Quick leave BR game
-    %LeaveSTW%: Quick leave STW game stay with party
-    )
+    Instruction = Auto Firing Mode Activated!
+    ; Handling empty keys
+    if (AutoHold) {
+        Instruction = %Instruction%`n%AutoHold%: Hold to left click (Semi-auto to Auto)
+        SetTimer, lClick, 25
+        ; hold to left click
+        Hotkey, %AutoHold%, LeftClick
+        Hotkey, %AutoHold% UP, LeftClickUp
+    }
+    if (LlamasToggle) {
+        Instruction = %Instruction%`n%LlamasToggle%: Toggle to left click (Open Llamas)
+        SetTimer, lClick, 25
+        ; toggle to left click
+        Hotkey, %LlamasToggle%, LeftToggle
+    }
+    if (RavagerHold) {
+        Instruction = %Instruction%`n%RavagerHold%: Hold to jump then right click (SK Ravager)
+        SetTimer, rClick, 50
+        ; hold to right click
+        Hotkey, %RavagerHold%, RavagerClick
+        Hotkey, %RavagerHold% UP, RavagerClickUp
+    }
+    if (RioHold) {
+        Instruction = %Instruction%`n%RioHold%: Hold to fire 6 shots then reload (Firstshot Rio)
+        
+        ammo_rio := 6
+        ammo = %ammo_rio%
+        counter = %ammo%
+        fire_rate = 2.25
+        reload_s = 1.08
+        real_reload_s := (reload_s*1) ; first shot can be fire before reload finished
+        shots_delay := (1000/fire_rate)
+        reload_ms := (real_reload_s * 1000)
+        reload_ms_minus := (reload_ms-shots_delay)
+        
+        ; set click interval in ms
+        SetTimer, RioFire, %shots_delay%
+        ; hold to use rio fire
+        Hotkey, %RioHold%, RioClick
+        Hotkey, %RioHold% UP, RioClickUp
+    }
+    if (LeaveBR) {
+        Instruction = %Instruction%`n%LeaveBR%: Leave BR game quickly
+        Hotkey, %LeaveBR%, QuickLeaveBR
+    }
+    if (LeaveSTW) {
+        Instruction = %Instruction%`n%LeaveSTW%: Leave STW game quickly stay with party
+        Hotkey, %LeaveSTW%, QuickLeaveSTW
+    }
+    
     MsgBox, , Auto Fire, %Instruction%
-    
-    ammo_rio := 6
-    ammo = %ammo_rio%
-    counter = %ammo%
-    fire_rate = 2.25
-    reload_s = 1.08
-    real_reload_s := (reload_s*1) ; first shot can be fire before reload finished
-    shots_delay := (1000/fire_rate)
-    reload_ms := (real_reload_s * 1000)
-    reload_ms_minus := (reload_ms-shots_delay)
-    
-    ; set click interval in ms
-    SetTimer, lClick, 25
-    SetTimer, rClick, 50
-    SetTimer, RioFire, %shots_delay%
-    ;SetTimer, SendEnter, 5
-    
-    ; hold to left click
-    Hotkey, %AutoHold%, LeftClick
-    Hotkey, %AutoHold% UP, LeftClickUp
-    
-    ; toggle to left click
-    Hotkey, %LlamasToggle%, LeftToggle
-    
-    ; hold to right click
-    Hotkey, %RavagerHold%, RavagerClick
-    Hotkey, %RavagerHold% UP, RavagerClickUp
-    
-    ; hold to use rio fire
-    Hotkey, %RioHold%, RioClick
-    Hotkey, %RioHold% UP, RioClickUp
-    
-    ; quick leave
-    Hotkey, %LeaveBR%, QuickLeaveBR
-    Hotkey, %LeaveSTW%, STWLeaveButStayParty
-    
 return
 
 ; Left Clicks
@@ -140,7 +143,7 @@ RioFire:
     if (!rioToggle) {
         counter = %ammo%
     return
-    }
+}
 Click, Down
 if (counter >= ammo) {
     counter := 0
@@ -162,7 +165,7 @@ QuickLeaveBR:
     Click, 1150, 780
 return
 
-STWLeaveButStayParty:
+QuickLeaveSTW:
     Send {Esc}
     Sleep, 50
     Click, 1410, 444
