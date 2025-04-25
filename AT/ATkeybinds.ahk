@@ -127,5 +127,6 @@ SaveKeybinds(file, normalAttack, dodge, skill1, skill2, skill3, skill4, skill5) 
     FileAppend("Skill3=" skill3 "`n", file)
     FileAppend("Skill4=" skill4 "`n", file)
     FileAppend("Skill5=" skill5 "`n", file)
-    MsgBox("Keybinds saved!")
+    MsgBox("Keybinds saved! The script will now reload to apply changes.")
+    Reload
 }
