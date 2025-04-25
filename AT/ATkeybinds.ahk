@@ -22,7 +22,7 @@ MyGui.Add("Text", "x230 y40 w300", "Basic dodge key")
 ; Add skill type keybinds
 MyGui.Add("Text", "x10 y70", "Skill Type 1:")
 skill1Input := MyGui.Add("Hotkey", "x120 y70 w100", keybinds.Skill1)
-MyGui.Add("Text", "x230 y70 w300", "Hold Attack (0.5s), then 4 repeats")
+MyGui.Add("Text", "x230 y70 w300", "Normal Attack once, hold 0.5s, then 5 repeats")
 MyGui.Add("Text", "x10 y100", "Skill Type 2:")
 skill2Input := MyGui.Add("Hotkey", "x120 y100 w100", keybinds.Skill2)
 MyGui.Add("Text", "x230 y100 w300", "Normal Attack repeat 5 times")
@@ -56,16 +56,20 @@ ToggleKeybinds(*) {
     SetTimer () => ToolTip(), -1000
 }
 
-; Skill Type 1: Hold Attack (0.5s), then 4 repeats
+; Skill Type 1: Normal Attack once, hold 0.5s, then 5 repeats
 Hotkey(keybinds.Skill1, SkillType1)
 
 SkillType1(*) {
     if !isEnabled
         return
+    ; First normal attack
     Send "{Blind}{" keybinds.NormalAttack " down}"
-    Sleep 500
+    Sleep 50
     Send "{Blind}{" keybinds.NormalAttack " up}"
-    Loop 4 {
+    ; Hold for 0.5s
+    Sleep 500
+    ; Then 5 quick repeats
+    Loop 5 {
         Send "{Blind}{" keybinds.NormalAttack " down}"
         Sleep 50
         Send "{Blind}{" keybinds.NormalAttack " up}"
