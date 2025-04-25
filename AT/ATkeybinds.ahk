@@ -66,6 +66,7 @@ SkillType1(*) {
     Send "{Blind}{" keybinds.NormalAttack " down}"
     Sleep 50
     Send "{Blind}{" keybinds.NormalAttack " up}"
+    Sleep 150
     ; Hold attack for 0.5s
     Send "{Blind}{" keybinds.NormalAttack " down}"
     Sleep 500
