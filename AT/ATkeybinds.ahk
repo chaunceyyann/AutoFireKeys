@@ -66,8 +66,10 @@ SkillType1(*) {
     Sleep 500
     Send "{Blind}{" keybinds.NormalAttack " up}"
     Loop 4 {
-        Send "{Blind}{" keybinds.NormalAttack "}"
-        Sleep 100
+        Send "{Blind}{" keybinds.NormalAttack " down}"
+        Sleep 50
+        Send "{Blind}{" keybinds.NormalAttack " up}"
+        Sleep 150
     }
 }
 
@@ -78,8 +80,10 @@ SkillType2(*) {
     if !isEnabled
         return
     Loop 5 {
-        Send "{Blind}{" keybinds.NormalAttack "}"
-        Sleep 100
+        Send "{Blind}{" keybinds.NormalAttack " down}"
+        Sleep 50
+        Send "{Blind}{" keybinds.NormalAttack " up}"
+        Sleep 150
     }
 }
 
@@ -111,9 +115,13 @@ Hotkey(keybinds.Skill5, SkillType5)
 SkillType5(*) {
     if !isEnabled
         return
-    Send "{Blind}{" keybinds.Dodge "}"
-    Sleep 100
-    Send "{Blind}{" keybinds.NormalAttack "}"
+    Send "{Blind}{" keybinds.Dodge " down}"
+    Sleep 50
+    Send "{Blind}{" keybinds.Dodge " up}"
+    Sleep 150
+    Send "{Blind}{" keybinds.NormalAttack " down}"
+    Sleep 50
+    Send "{Blind}{" keybinds.NormalAttack " up}"
 }
 
 ; Function to load keybinds from config.ini
