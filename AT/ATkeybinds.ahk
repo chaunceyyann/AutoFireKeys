@@ -1,21 +1,21 @@
 #Requires AutoHotkey v2.0
 
 ; Define default keybinds
-defaultKeybinds := { "NormalAttack": "C", "Dodge": "Space" }
+defaultKeybinds := {NormalAttack: "C", Dodge: "Space"}
 
 ; Load keybinds from config.ini or use defaults
 configFile := A_ScriptDir "\config.ini"
 keybinds := LoadKeybinds(configFile, defaultKeybinds)
 
 ; Create GUI for assigning keybinds
-gui := Gui()
-gui.Add("Text", "x10 y10", "Normal Attack:")
-normalAttackInput := gui.Add("Edit", "x120 y10 w100", keybinds.NormalAttack)
-gui.Add("Text", "x10 y40", "Dodge:")
-dodgeInput := gui.Add("Edit", "x120 y40 w100", keybinds.Dodge)
-gui.Add("Button", "x10 y80 w100", "Save").OnEvent("Click", (*) => SaveKeybinds(configFile, normalAttackInput.Value, dodgeInput.Value))
-gui.Add("Button", "x120 y80 w100", "Exit").OnEvent("Click", (*) => ExitApp())
-gui.Show()
+MyGui := Gui.Create()
+MyGui.Add("Text", "x10 y10", "Normal Attack:")
+normalAttackInput := MyGui.Add("Edit", "x120 y10 w100", keybinds.NormalAttack)
+MyGui.Add("Text", "x10 y40", "Dodge:")
+dodgeInput := MyGui.Add("Edit", "x120 y40 w100", keybinds.Dodge)
+MyGui.Add("Button", "x10 y80 w100", "Save").OnEvent("Click", (*) => SaveKeybinds(configFile, normalAttackInput.Value, dodgeInput.Value))
+MyGui.Add("Button", "x120 y80 w100", "Exit").OnEvent("Click", (*) => ExitApp())
+MyGui.Show()
 
 ; Skill Type 1: Hold Attack (0.5s), then 4 repeats
 Hotkey(keybinds.NormalAttack, (*) => {
@@ -66,8 +66,8 @@ LoadKeybinds(file, defaults) {
         line := StrSplit(A_LoopReadLine, "=")
         ini[line[1]] := line[2]
     }
-    return { "NormalAttack": ini.HasKey("NormalAttack") ? ini.NormalAttack : defaults.NormalAttack
-           , "Dodge": ini.HasKey("Dodge") ? ini.Dodge : defaults.Dodge }
+    return {NormalAttack: ini.HasKey("NormalAttack") ? ini.NormalAttack : defaults.NormalAttack
+           ,Dodge: ini.HasKey("Dodge") ? ini.Dodge : defaults.Dodge}
 }
 
 ; Function to save keybinds to config.ini
