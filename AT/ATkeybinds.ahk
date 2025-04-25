@@ -71,12 +71,13 @@ SkillType1(*) {
     Send "{Blind}{" keybinds.NormalAttack " down}"
     Sleep 500
     Send "{Blind}{" keybinds.NormalAttack " up}"
+    Sleep 200
     ; Then 5 quick repeats
     Loop 5 {
         Send "{Blind}{" keybinds.NormalAttack " down}"
         Sleep 50
         Send "{Blind}{" keybinds.NormalAttack " up}"
-        Sleep 150
+        Sleep 250
     }
 }
 
