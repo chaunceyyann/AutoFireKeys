@@ -8,7 +8,7 @@ configFile := A_ScriptDir "\config.ini"
 keybinds := LoadKeybinds(configFile, defaultKeybinds)
 
 ; Create GUI for assigning keybinds
-MyGui := Gui.Create()
+MyGui := Gui()
 MyGui.Add("Text", "x10 y10", "Normal Attack:")
 normalAttackInput := MyGui.Add("Edit", "x120 y10 w100", keybinds.NormalAttack)
 MyGui.Add("Text", "x10 y40", "Dodge:")
@@ -18,44 +18,54 @@ MyGui.Add("Button", "x120 y80 w100", "Exit").OnEvent("Click", (*) => ExitApp())
 MyGui.Show()
 
 ; Skill Type 1: Hold Attack (0.5s), then 4 repeats
-Hotkey(keybinds.NormalAttack, (*) => {
-    Send("{Blind}{" keybinds.NormalAttack " down}")
-    Sleep(500)
-    Send("{Blind}{" keybinds.NormalAttack " up}")
+Hotkey(keybinds.NormalAttack, SkillType1)
+
+SkillType1(*) {
+    Send "{Blind}{" keybinds.NormalAttack " down}"
+    Sleep 500
+    Send "{Blind}{" keybinds.NormalAttack " up}"
     Loop 4 {
-        Send("{Blind}{" keybinds.NormalAttack "}")
-        Sleep(100)
+        Send "{Blind}{" keybinds.NormalAttack "}"
+        Sleep 100
     }
-})
+}
 
 ; Skill Type 2: Normal Attack repeat 5 times
-Hotkey("*" keybinds.NormalAttack, (*) => {
+Hotkey("*" keybinds.NormalAttack, SkillType2)
+
+SkillType2(*) {
     Loop 5 {
-        Send("{Blind}{" keybinds.NormalAttack "}")
-        Sleep(100)
+        Send "{Blind}{" keybinds.NormalAttack "}"
+        Sleep 100
     }
-})
+}
 
 ; Skill Type 3: Hold Attack (0.2s) to charge and release
-Hotkey("+*" keybinds.NormalAttack, (*) => {
-    Send("{Blind}{" keybinds.NormalAttack " down}")
-    Sleep(200)
-    Send("{Blind}{" keybinds.NormalAttack " up}")
-})
+Hotkey("+*" keybinds.NormalAttack, SkillType3)
+
+SkillType3(*) {
+    Send "{Blind}{" keybinds.NormalAttack " down}"
+    Sleep 200
+    Send "{Blind}{" keybinds.NormalAttack " up}"
+}
 
 ; Skill Type 4: Hold Dodge (0.2s) to charge and release
-Hotkey("+*" keybinds.Dodge, (*) => {
-    Send("{Blind}{" keybinds.Dodge " down}")
-    Sleep(200)
-    Send("{Blind}{" keybinds.Dodge " up}")
-})
+Hotkey("+*" keybinds.Dodge, SkillType4)
+
+SkillType4(*) {
+    Send "{Blind}{" keybinds.Dodge " down}"
+    Sleep 200
+    Send "{Blind}{" keybinds.Dodge " up}"
+}
 
 ; Skill Type 5: Tap Dodge, then Attack
-Hotkey(keybinds.Dodge, (*) => {
-    Send("{Blind}{" keybinds.Dodge "}")
-    Sleep(100)
-    Send("{Blind}{" keybinds.NormalAttack "}")
-})
+Hotkey(keybinds.Dodge, SkillType5)
+
+SkillType5(*) {
+    Send "{Blind}{" keybinds.Dodge "}"
+    Sleep 100
+    Send "{Blind}{" keybinds.NormalAttack "}"
+}
 
 ; Function to load keybinds from config.ini
 LoadKeybinds(file, defaults) {
@@ -72,7 +82,9 @@ LoadKeybinds(file, defaults) {
 
 ; Function to save keybinds to config.ini
 SaveKeybinds(file, normalAttack, dodge) {
-    FileDelete(file)
+    if FileExist(file) {
+        FileDelete(file)
+    }
     FileAppend("NormalAttack=" normalAttack "`n", file)
     FileAppend("Dodge=" dodge "`n", file)
     MsgBox("Keybinds saved!")
