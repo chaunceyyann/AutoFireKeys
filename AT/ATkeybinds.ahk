@@ -3,8 +3,8 @@
 ; Define default keybinds
 defaultKeybinds := {NormalAttack: "C", Dodge: "Space", Skill1: "1", Skill2: "2", Skill3: "3", Skill4: "4", Skill5: "5", ToggleKey: "^+F1"}
 
-; Global toggle state
-global isEnabled := true
+; Global toggle state - start disabled
+global isEnabled := false
 
 ; Load keybinds from config.ini or use defaults
 configFile := A_ScriptDir "\config.ini"
@@ -41,13 +41,62 @@ MyGui.Add("Text", "x10 y220", "Toggle Key:")
 toggleInput := MyGui.Add("Hotkey", "x120 y220 w100", keybinds.ToggleKey)
 MyGui.Add("Text", "x230 y220 w300", "Toggle all keybinds on/off (default: Ctrl+Shift+F1)")
 
-MyGui.Add("Button", "x10 y250 w100", "Save").OnEvent("Click", (*) => SaveKeybinds(configFile, normalAttackInput.Value, dodgeInput.Value, skill1Input.Value, skill2Input.Value, skill3Input.Value, skill4Input.Value, skill5Input.Value, toggleInput.Value))
+; Add Activate and Exit buttons
+MyGui.Add("Button", "x10 y250 w100", "Activate").OnEvent("Click", ActivateAndSave)
 MyGui.Add("Button", "x120 y250 w100", "Exit").OnEvent("Click", (*) => ExitApp())
+
+; Create tray menu
+A_TrayMenu.Delete  ; Remove default menu items
+A_TrayMenu.Add("Show Window", ShowWindow)
+A_TrayMenu.Add("Exit", (*) => ExitApp())
+
 MyGui.Show()
 
-; Global toggle hotkey
-Hotkey(keybinds.ToggleKey, ToggleKeybinds)
+; Function to show window from tray
+ShowWindow(*) {
+    MyGui.Show()
+}
 
+; Function to activate keybinds and save config
+ActivateAndSave(*) {
+    global isEnabled, keybinds
+    
+    ; Save current input values to keybinds
+    keybinds.NormalAttack := normalAttackInput.Value
+    keybinds.Dodge := dodgeInput.Value
+    keybinds.Skill1 := skill1Input.Value
+    keybinds.Skill2 := skill2Input.Value
+    keybinds.Skill3 := skill3Input.Value
+    keybinds.Skill4 := skill4Input.Value
+    keybinds.Skill5 := skill5Input.Value
+    keybinds.ToggleKey := toggleInput.Value
+    
+    ; Save to config file
+    SaveKeybinds(configFile, keybinds.NormalAttack, keybinds.Dodge, keybinds.Skill1, keybinds.Skill2, keybinds.Skill3, keybinds.Skill4, keybinds.Skill5, keybinds.ToggleKey)
+    
+    ; Enable keybinds
+    isEnabled := true
+    
+    ; Set up hotkeys
+    SetupHotkeys()
+    
+    ; Show success message and minimize
+    ToolTip("Keybinds activated!")
+    SetTimer () => ToolTip(), -1000
+    MyGui.Hide()
+}
+
+; Function to set up all hotkeys
+SetupHotkeys() {
+    Hotkey(keybinds.ToggleKey, ToggleKeybinds)
+    Hotkey(keybinds.Skill1, SkillType1)
+    Hotkey(keybinds.Skill2, SkillType2)
+    Hotkey(keybinds.Skill3, SkillType3)
+    Hotkey(keybinds.Skill4, SkillType4)
+    Hotkey(keybinds.Skill5, SkillType5)
+}
+
+; Global toggle hotkey
 ToggleKeybinds(*) {
     global isEnabled
     isEnabled := !isEnabled
@@ -57,8 +106,6 @@ ToggleKeybinds(*) {
 }
 
 ; Skill Type 1: Normal Attack once, hold attack 0.5s, then 5 repeats
-Hotkey(keybinds.Skill1, SkillType1)
-
 SkillType1(*) {
     if !isEnabled
         return
@@ -82,8 +129,6 @@ SkillType1(*) {
 }
 
 ; Skill Type 2: Normal Attack repeat 5 times
-Hotkey(keybinds.Skill2, SkillType2)
-
 SkillType2(*) {
     if !isEnabled
         return
@@ -96,8 +141,6 @@ SkillType2(*) {
 }
 
 ; Skill Type 3: Hold Attack (0.5s) to charge and release
-Hotkey(keybinds.Skill3, SkillType3)
-
 SkillType3(*) {
     if !isEnabled
         return
@@ -107,8 +150,6 @@ SkillType3(*) {
 }
 
 ; Skill Type 4: Hold Dodge (0.5s) to charge and release
-Hotkey(keybinds.Skill4, SkillType4)
-
 SkillType4(*) {
     if !isEnabled
         return
@@ -118,8 +159,6 @@ SkillType4(*) {
 }
 
 ; Skill Type 5: Tap Dodge, then Attack
-Hotkey(keybinds.Skill5, SkillType5)
-
 SkillType5(*) {
     if !isEnabled
         return
@@ -174,6 +213,4 @@ SaveKeybinds(file, normalAttack, dodge, skill1, skill2, skill3, skill4, skill5, 
     FileAppend("Skill4=" skill4 "`n", file)
     FileAppend("Skill5=" skill5 "`n", file)
     FileAppend("ToggleKey=" toggleKey "`n", file)
-    MsgBox("Keybinds saved! The script will now reload to apply changes.")
-    Reload
 }
