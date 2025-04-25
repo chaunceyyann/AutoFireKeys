@@ -46,9 +46,9 @@ MyGui.Add("Button", "x10 y250 w100", "Activate").OnEvent("Click", ActivateAndSav
 MyGui.Add("Button", "x120 y250 w100", "Exit").OnEvent("Click", (*) => ExitApp())
 
 ; Create tray menu
-A_TrayMenu.Delete  ; Remove default menu items
+; A_TrayMenu.Delete  ; Remove default menu items
 A_TrayMenu.Add("Show Window", ShowWindow)
-A_TrayMenu.Add("Exit", (*) => ExitApp())
+; A_TrayMenu.Add("Exit", (*) => ExitApp())
 
 MyGui.Show()
 
@@ -88,7 +88,10 @@ ActivateAndSave(*) {
 
 ; Function to set up all hotkeys
 SetupHotkeys() {
+    ; Set up toggle hotkey (always active after activation)
     Hotkey(keybinds.ToggleKey, ToggleKeybinds)
+    
+    ; Set up skill hotkeys
     Hotkey(keybinds.Skill1, SkillType1)
     Hotkey(keybinds.Skill2, SkillType2)
     Hotkey(keybinds.Skill3, SkillType3)
