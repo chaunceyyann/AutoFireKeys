@@ -22,10 +22,10 @@ MyGui.Add("Text", "x230 y40 w300", "Basic dodge key")
 ; Add skill type keybinds
 MyGui.Add("Text", "x10 y70", "Skill Type 1:")
 skill1Input := MyGui.Add("Hotkey", "x120 y70 w100", keybinds.Skill1)
-MyGui.Add("Text", "x230 y70 w300", "Normal Attack once, hold attack 0.5s, then 5 repeats")
+MyGui.Add("Text", "x230 y70 w300", "Normal Attack once, hold attack 0.5s, then 8 repeats")
 MyGui.Add("Text", "x10 y100", "Skill Type 2:")
 skill2Input := MyGui.Add("Hotkey", "x120 y100 w100", keybinds.Skill2)
-MyGui.Add("Text", "x230 y100 w300", "Normal Attack repeat 5 times")
+MyGui.Add("Text", "x230 y100 w300", "Normal Attack repeat 8 times")
 MyGui.Add("Text", "x10 y130", "Skill Type 3:")
 skill3Input := MyGui.Add("Hotkey", "x120 y130 w100", keybinds.Skill3)
 MyGui.Add("Text", "x230 y130 w300", "Hold Attack (0.5s) to charge and release")
@@ -116,14 +116,14 @@ SkillType1(*) {
     Send "{Blind}{" keybinds.NormalAttack " down}"
     Sleep 50
     Send "{Blind}{" keybinds.NormalAttack " up}"
-    Sleep 150
+    Sleep 50
     ; Hold attack for 0.5s
     Send "{Blind}{" keybinds.NormalAttack " down}"
-    Sleep 500
+    Sleep 350
     Send "{Blind}{" keybinds.NormalAttack " up}"
-    Sleep 200
-    ; Then 5 quick repeats
-    Loop 5 {
+    Sleep 50
+    ; Then 8 quick repeats
+    Loop 8 {
         Send "{Blind}{" keybinds.NormalAttack " down}"
         Sleep 50
         Send "{Blind}{" keybinds.NormalAttack " up}"
@@ -131,15 +131,15 @@ SkillType1(*) {
     }
 }
 
-; Skill Type 2: Normal Attack repeat 5 times
+; Skill Type 2: Normal Attack repeat 8 times
 SkillType2(*) {
     if !isEnabled
         return
-    Loop 5 {
+    Loop 8 {
         Send "{Blind}{" keybinds.NormalAttack " down}"
         Sleep 50
         Send "{Blind}{" keybinds.NormalAttack " up}"
-        Sleep 150
+        Sleep 250
     }
 }
 
