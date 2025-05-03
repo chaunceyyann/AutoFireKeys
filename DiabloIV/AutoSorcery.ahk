@@ -53,7 +53,7 @@ toggleInput := MyGui.Add("Hotkey", "w100", defaultKeybinds.ToggleKey)
 
 ; Add interval input
 MyGui.Add("Text", "x10 y+10", "Cast Interval (ms):")
-intervalInput := MyGui.Add("Edit", "w100", "500")  ; Default to 500ms
+intervalInput := MyGui.Add("Edit", "w100", "100")  ; Default to 100ms
 
 ; Add buttons
 MyGui.Add("Button", "x10 y+20 w100", "Activate").OnEvent("Click", ActivateScript)
@@ -119,15 +119,15 @@ SkillRotation(keys, interval) {
         ; Start the rotation immediately
         RunRotation(keys, interval)
         ; Start independent timers for dodge and mouse click
-        SetTimer () => RunDodge(keys), 1000
-        SetTimer () => RunMouseClick(), 200
+        SetTimer () => RunDodge(keys), 500
+        SetTimer () => RunMouseClick(), 100
     } else {
         ToolTip "Rotation stopped"
         SetTimer () => ToolTip(), -1000
         ; Stop all timers
-        SetTimer RunRotation, 0
-        SetTimer RunDodge, 0
-        SetTimer RunMouseClick, 0
+        SetTimer () => RunRotation(keys, interval), 0
+        SetTimer () => RunDodge(keys), 0
+        SetTimer () => RunMouseClick(), 0
     }
 }
 
@@ -173,7 +173,7 @@ RunMouseClick() {
         return
         
     Send "{LButton down}"
-    Sleep 50
+    Sleep 30
     Send "{LButton up}"
-    Sleep 50
+    Sleep 20
 }
