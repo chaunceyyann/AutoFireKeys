@@ -19,7 +19,7 @@ global defaultKeybinds := {
     Skill5: "5",
     Skill6: "6",
     Dodge: "Space",
-    ToggleKey: "^+F1"  ; Change from "^!z" to "^+F1" (Ctrl+Shift+F1)
+    ToggleKey: "^+F2"  ; Ctrl+Shift+F2
 }
 
 ; Create GUI
@@ -82,14 +82,17 @@ ActivateScript(*) {
     ; Set up toggle hotkey
     Hotkey toggleInput.Value, ToggleScript
     
-    ; Set up rotation hotkey (F1 instead of Middle mouse button)
-    Hotkey "F1", (*) => SkillRotation(keys, interval)
+    ; Set up F1 rotation hotkey (with dodge)
+    Hotkey "F1", (*) => SkillDodgeRotation(keys, interval)
+    
+    ; Set up F3 rotation hotkey (skills only)
+    Hotkey "F3", (*) => SkillOnlyRotation(keys, interval)
     
     ; Minimize GUI
     MyGui.Hide()
     
     ; Show activation message
-    ToolTip "Script activated! Press " toggleInput.Value " to toggle or F1 to start rotation"
+    ToolTip "Script activated! Press " toggleInput.Value " to toggle, F2 for full rotation, or F3 for skills only"
     SetTimer () => ToolTip(), -2000
 }
 
@@ -103,7 +106,7 @@ ToggleScript(*) {
 }
 
 ; Skill rotation function
-SkillRotation(keys, interval) {
+SkillDodgeRotation(keys, interval) {
     global isEnabled
     global isRotating
     
@@ -120,14 +123,17 @@ SkillRotation(keys, interval) {
         RunRotation(keys, interval)
         ; Start independent timers for dodge and mouse click
         SetTimer () => RunDodge(keys), 500
-        SetTimer () => RunMouseClick(), 100
+        ; SetTimer () => RunMouseClick(), 100
+        ; Start Skill 6 rapid casting
+        SetTimer () => RunSkill6(keys), 100
     } else {
         ToolTip "Rotation stopped"
         SetTimer () => ToolTip(), -1000
         ; Stop all timers
         SetTimer () => RunRotation(keys, interval), 0
         SetTimer () => RunDodge(keys), 0
-        SetTimer () => RunMouseClick(), 0
+        ; SetTimer () => RunMouseClick(), 0
+        SetTimer () => RunSkill6(keys), 0
     }
 }
 
@@ -150,9 +156,23 @@ RunRotation(keys, interval) {
     
     Send "{" keys.Skill4 "}"
     Sleep interval
-    
+
+    Send "{" keys.Skill5 "}"
+    Sleep interval
+
     if (isRotating && isEnabled)
         SetTimer () => RunRotation(keys, interval), -interval  ; Schedule next rotation
+}
+
+; Separate function for Skill 6 rapid casting
+RunSkill6(keys) {
+    global isRotating
+    global isEnabled
+    
+    if !(isRotating && isEnabled)
+        return
+        
+    Send "{" keys.Skill6 "}"
 }
 
 RunDodge(keys) {
@@ -162,7 +182,10 @@ RunDodge(keys) {
     if !(isRotating && isEnabled)
         return
         
-    Send "{" keys.Dodge "}"
+    Send "{" keys.Dodge " down}"
+    Sleep 50
+    Send "{" keys.Dodge " up}"
+    Sleep 20
 }
 
 RunMouseClick() {
@@ -176,4 +199,31 @@ RunMouseClick() {
     Sleep 30
     Send "{LButton up}"
     Sleep 20
+}
+
+; Skill only rotation function (no dodge or mouse click)
+SkillOnlyRotation(keys, interval) {
+    global isEnabled
+    global isRotating
+    
+    if !isEnabled
+        return
+        
+    isRotating := !isRotating
+    
+    if isRotating {
+        ToolTip "Skill rotation started (F2)"
+        SetTimer () => ToolTip(), -1000
+        
+        ; Start the rotation immediately
+        RunRotation(keys, interval)
+        ; Start Skill 6 rapid casting
+        SetTimer () => RunSkill6(keys), 100
+    } else {
+        ToolTip "Skill rotation stopped"
+        SetTimer () => ToolTip(), -1000
+        ; Stop rotation timer
+        SetTimer () => RunRotation(keys, interval), 0
+        SetTimer () => RunSkill6(keys), 0
+    }
 }
