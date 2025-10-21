@@ -1,6 +1,7 @@
 #Requires AutoHotkey v2.0
 ; Individual Key Toggler with Configurable Intervals
 ; Each key (1-6) can be toggled on/off with its own interval
+; Keys 1-5 support cooldown feature: prevents automated press if manually pressed within cooldown window
 ; Includes dodge (space) functionality
 
 ; Global variables
@@ -8,35 +9,62 @@ global isScriptEnabled := false
 global keyStates := Map()
 global keyIntervals := Map()
 global keyControls := Map()
-global dodgeEnabled := false
-global dodgeInterval := 1000
-global leftClickEnabled := false
+global dodgeEnabled := true
+global dodgeInterval := 300
+global leftClickEnabled := true
 global leftClickInterval := 100
 global rightClickEnabled := false
 global rightClickInterval := 100
 
+; Cooldown feature for keys 1-5
+global keyCooldowns := Map()  ; Stores cooldown intervals (ms)
+global lastManualPress := Map()  ; Stores timestamp of last manual press
+global keyHeldDown := Map()  ; Tracks which keys are currently held down
+
 ; Initialize key states and intervals
 keyStates[1] := false
-keyStates[2] := false
-keyStates[3] := false
-keyStates[4] := false
-keyStates[5] := false
+keyStates[2] := true   ; Enabled by default
+keyStates[3] := true   ; Enabled by default
+keyStates[4] := true   ; Enabled by default
+keyStates[5] := true   ; Enabled by default
 keyStates[6] := false
 
 keyIntervals[1] := 1000
-keyIntervals[2] := 1000
-keyIntervals[3] := 500
-keyIntervals[4] := 1000
-keyIntervals[5] := 1000
+keyIntervals[2] := 770   ; Around 0.77s
+keyIntervals[3] := 1100  ; Around 1s
+keyIntervals[4] := 205   ; Very fast spam
+keyIntervals[5] := 198   ; Very fast spam
 keyIntervals[6] := 1000
+
+; Initialize cooldown intervals (0 = disabled)
+keyCooldowns[1] := 0
+keyCooldowns[2] := 0
+keyCooldowns[3] := 0
+keyCooldowns[4] := 1020  ; Ensures key 5 fires before key 4 resumes
+keyCooldowns[5] := 0
+
+; Initialize last manual press times
+lastManualPress[1] := 0
+lastManualPress[2] := 0
+lastManualPress[3] := 0
+lastManualPress[4] := 0
+lastManualPress[5] := 0
+
+; Initialize held down states
+keyHeldDown[1] := false
+keyHeldDown[2] := false
+keyHeldDown[3] := false
+keyHeldDown[4] := false
+keyHeldDown[5] := false
+keyHeldDown[6] := false
 
 ; Create GUI
 MyGui := Gui("+AlwaysOnTop +Resize", "Individual Key Toggler")
 MyGui.SetFont("s10")
 
 ; Add title
-MyGui.Add("Text", "x10 y10 w300 Center", "Individual Key Toggler")
-MyGui.Add("Text", "x10 y+10 w300 Center", "Toggle each key on/off with custom intervals")
+MyGui.Add("Text", "x10 y10 w480 Center", "Individual Key Toggler")
+MyGui.Add("Text", "x10 y+10 w480 Center", "Toggle each key on/off with custom intervals")
 
 ; Add master toggle
 MyGui.Add("Text", "x10 y+20", "Master Toggle:")
@@ -48,76 +76,94 @@ MyGui.Add("Text", "x10 y+10", "Global Toggle Key:")
 globalToggleInput := MyGui.Add("Hotkey", "x+10 w100", "F1")
 
 ; Add separator
-MyGui.Add("Text", "x10 y+20 w330", "──────────────────────────────")
+MyGui.Add("Text", "x10 y+20 w450", "──────────────────────────────────────────────────")
+
+; Add legend
+MyGui.Add("Text", "x10 y+10 w450", "Interval: Auto-press rate (ms, 0=hold key) | Cooldown: Manual block (ms, 0=off)")
 
 ; Key 1
 keyControls[1] := {}
-keyControls[1].checkbox := MyGui.Add("Checkbox", "x10 y+10", "Key 1")
+keyControls[1].checkbox := MyGui.Add("Checkbox", "x10 y+15", "Key 1")
 keyControls[1].checkbox.OnEvent("Click", (*) => ToggleKey(1))
-MyGui.Add("Text", "x+10", "Interval (ms):")
-keyControls[1].interval := MyGui.Add("Edit", "x+5 w80", keyIntervals[1])
+MyGui.Add("Text", "x+10", "Interval:")
+keyControls[1].interval := MyGui.Add("Edit", "x+5 w70", keyIntervals[1])
 keyControls[1].interval.OnEvent("Change", (*) => UpdateKeyInterval(1))
+MyGui.Add("Text", "x+10", "Cooldown:")
+keyControls[1].cooldown := MyGui.Add("Edit", "x+5 w70", keyCooldowns[1])
+keyControls[1].cooldown.OnEvent("Change", (*) => UpdateKeyCooldown(1))
 
 ; Key 2
 keyControls[2] := {}
-keyControls[2].checkbox := MyGui.Add("Checkbox", "x10 y+10", "Key 2")
+keyControls[2].checkbox := MyGui.Add("Checkbox", "x10 y+15 Checked", "Key 2")
 keyControls[2].checkbox.OnEvent("Click", (*) => ToggleKey(2))
-MyGui.Add("Text", "x+10", "Interval (ms):")
-keyControls[2].interval := MyGui.Add("Edit", "x+5 w80", keyIntervals[2])
+MyGui.Add("Text", "x+10", "Interval:")
+keyControls[2].interval := MyGui.Add("Edit", "x+5 w70", keyIntervals[2])
 keyControls[2].interval.OnEvent("Change", (*) => UpdateKeyInterval(2))
+MyGui.Add("Text", "x+10", "Cooldown:")
+keyControls[2].cooldown := MyGui.Add("Edit", "x+5 w70", keyCooldowns[2])
+keyControls[2].cooldown.OnEvent("Change", (*) => UpdateKeyCooldown(2))
 
 ; Key 3
 keyControls[3] := {}
-keyControls[3].checkbox := MyGui.Add("Checkbox", "x10 y+10", "Key 3")
+keyControls[3].checkbox := MyGui.Add("Checkbox", "x10 y+15 Checked", "Key 3")
 keyControls[3].checkbox.OnEvent("Click", (*) => ToggleKey(3))
-MyGui.Add("Text", "x+10", "Interval (ms):")
-keyControls[3].interval := MyGui.Add("Edit", "x+5 w80", keyIntervals[3])
+MyGui.Add("Text", "x+10", "Interval:")
+keyControls[3].interval := MyGui.Add("Edit", "x+5 w70", keyIntervals[3])
 keyControls[3].interval.OnEvent("Change", (*) => UpdateKeyInterval(3))
+MyGui.Add("Text", "x+10", "Cooldown:")
+keyControls[3].cooldown := MyGui.Add("Edit", "x+5 w70", keyCooldowns[3])
+keyControls[3].cooldown.OnEvent("Change", (*) => UpdateKeyCooldown(3))
 
 ; Key 4
 keyControls[4] := {}
-keyControls[4].checkbox := MyGui.Add("Checkbox", "x10 y+10", "Key 4")
+keyControls[4].checkbox := MyGui.Add("Checkbox", "x10 y+15 Checked", "Key 4")
 keyControls[4].checkbox.OnEvent("Click", (*) => ToggleKey(4))
-MyGui.Add("Text", "x+10", "Interval (ms):")
-keyControls[4].interval := MyGui.Add("Edit", "x+5 w80", keyIntervals[4])
+MyGui.Add("Text", "x+10", "Interval:")
+keyControls[4].interval := MyGui.Add("Edit", "x+5 w70", keyIntervals[4])
 keyControls[4].interval.OnEvent("Change", (*) => UpdateKeyInterval(4))
+MyGui.Add("Text", "x+10", "Cooldown:")
+keyControls[4].cooldown := MyGui.Add("Edit", "x+5 w70", keyCooldowns[4])
+keyControls[4].cooldown.OnEvent("Change", (*) => UpdateKeyCooldown(4))
 
 ; Key 5
 keyControls[5] := {}
-keyControls[5].checkbox := MyGui.Add("Checkbox", "x10 y+10", "Key 5")
+keyControls[5].checkbox := MyGui.Add("Checkbox", "x10 y+15 Checked", "Key 5")
 keyControls[5].checkbox.OnEvent("Click", (*) => ToggleKey(5))
-MyGui.Add("Text", "x+10", "Interval (ms):")
-keyControls[5].interval := MyGui.Add("Edit", "x+5 w80", keyIntervals[5])
+MyGui.Add("Text", "x+10", "Interval:")
+keyControls[5].interval := MyGui.Add("Edit", "x+5 w70", keyIntervals[5])
 keyControls[5].interval.OnEvent("Change", (*) => UpdateKeyInterval(5))
+MyGui.Add("Text", "x+10", "Cooldown:")
+keyControls[5].cooldown := MyGui.Add("Edit", "x+5 w70", keyCooldowns[5])
+keyControls[5].cooldown.OnEvent("Change", (*) => UpdateKeyCooldown(5))
 
 ; Key 6
 keyControls[6] := {}
-keyControls[6].checkbox := MyGui.Add("Checkbox", "x10 y+10", "Key 6")
+keyControls[6].checkbox := MyGui.Add("Checkbox", "x10 y+15", "Key 6")
 keyControls[6].checkbox.OnEvent("Click", (*) => ToggleKey(6))
-MyGui.Add("Text", "x+10", "Interval (ms):")
-keyControls[6].interval := MyGui.Add("Edit", "x+5 w80", keyIntervals[6])
+MyGui.Add("Text", "x+10", "Interval:")
+keyControls[6].interval := MyGui.Add("Edit", "x+5 w70", keyIntervals[6])
 keyControls[6].interval.OnEvent("Change", (*) => UpdateKeyInterval(6))
 
 ; Add dodge section
-MyGui.Add("Text", "x10 y+20 w330", "──────────────────────────────")
-dodgeCheckbox := MyGui.Add("Checkbox", "x10 y+10", "Dodge (Space)")
+MyGui.Add("Text", "x10 y+20 w450", "──────────────────────────────────────────────────")
+dodgeCheckbox := MyGui.Add("Checkbox", "x10 y+15 Checked", "Dodge (Space)")
 dodgeCheckbox.OnEvent("Click", ToggleDodge)
-MyGui.Add("Text", "x+10", "Interval (ms):")
-dodgeIntervalInput := MyGui.Add("Edit", "x+5 w80", dodgeInterval)
+MyGui.Add("Text", "x+10", "Interval:")
+dodgeIntervalInput := MyGui.Add("Edit", "x+5 w70", dodgeInterval)
 dodgeIntervalInput.OnEvent("Change", UpdateDodgeInterval)
 
 ; Add mouse click section
-MyGui.Add("Text", "x10 y+20 w330", "──────────────────────────────")
-leftClickCheckbox := MyGui.Add("Checkbox", "x10 y+10", "Left Click")
+MyGui.Add("Text", "x10 y+20 w450", "──────────────────────────────────────────────────")
+leftClickCheckbox := MyGui.Add("Checkbox", "x10 y+15 Checked", "Left Click")
 leftClickCheckbox.OnEvent("Click", ToggleLeftClick)
-MyGui.Add("Text", "x+10", "Interval (ms):")
-leftClickIntervalInput := MyGui.Add("Edit", "x+5 w80", leftClickInterval)
+MyGui.Add("Text", "x+10", "Interval:")
+leftClickIntervalInput := MyGui.Add("Edit", "x+5 w70", leftClickInterval)
 leftClickIntervalInput.OnEvent("Change", UpdateLeftClickInterval)
 
-rightClickCheckbox := MyGui.Add("Checkbox", "x10 y+10", "Right Click")
+rightClickCheckbox := MyGui.Add("Checkbox", "x10 y+15", "Right Click")
 rightClickCheckbox.OnEvent("Click", ToggleRightClick)
-MyGui.Add("Text", "x+10", "Interval (ms):")
-rightClickIntervalInput := MyGui.Add("Edit", "x+5 w80", rightClickInterval)
+MyGui.Add("Text", "x+10", "Interval:")
+rightClickIntervalInput := MyGui.Add("Edit", "x+5 w70", rightClickInterval)
 rightClickIntervalInput.OnEvent("Change", UpdateRightClickInterval)
 
 ; Add control buttons
@@ -126,10 +172,10 @@ MyGui.Add("Button", "x+10 w100", "Stop All").OnEvent("Click", StopAllKeys)
 MyGui.Add("Button", "x+10 w100", "Exit").OnEvent("Click", (*) => ExitApp())
 
 ; Add status text
-statusText := MyGui.Add("Text", "x10 y+20 w300", "Status: Script Disabled")
+statusText := MyGui.Add("Text", "x10 y+20 w450", "Status: Script Disabled")
 
 ; Show GUI
-MyGui.Show("w350 h700")
+MyGui.Show("w500 h720")
 
 ; Toggle master script
 ToggleMasterScript(*) {
@@ -140,24 +186,27 @@ ToggleMasterScript(*) {
         ; Set up global hotkey
         Hotkey globalToggleInput.Value, ToggleMasterScriptHotkey
         
-        ; Start all enabled timers
-        if keyStates[1] {
-            SetTimer () => SendKey(1), keyIntervals[1]
-        }
-        if keyStates[2] {
-            SetTimer () => SendKey(2), keyIntervals[2]
-        }
-        if keyStates[3] {
-            SetTimer () => SendKey(3), keyIntervals[3]
-        }
-        if keyStates[4] {
-            SetTimer () => SendKey(4), keyIntervals[4]
-        }
-        if keyStates[5] {
-            SetTimer () => SendKey(5), keyIntervals[5]
-        }
-        if keyStates[6] {
-            SetTimer () => SendKey(6), keyIntervals[6]
+        ; Set up manual key press tracking hotkeys for keys 1-5
+        ; $ prefix prevents the hotkey from being triggered by Send commands
+        Hotkey "$1", (*) => TrackManualKeyPress(1), "On"
+        Hotkey "$2", (*) => TrackManualKeyPress(2), "On"
+        Hotkey "$3", (*) => TrackManualKeyPress(3), "On"
+        Hotkey "$4", (*) => TrackManualKeyPress(4), "On"
+        Hotkey "$5", (*) => TrackManualKeyPress(5), "On"
+        
+        ; Start all enabled keys (timers or hold mode)
+        Loop 6 {
+            keyNum := A_Index
+            if keyStates[keyNum] {
+                if keyIntervals[keyNum] = 0 {
+                    ; Hold mode
+                    Send "{" keyNum " down}"
+                    keyHeldDown[keyNum] := true
+                } else {
+                    ; Timer mode
+                    SetTimer () => SendKey(keyNum), keyIntervals[keyNum]
+                }
+            }
         }
         
         if dodgeEnabled {
@@ -174,6 +223,13 @@ ToggleMasterScript(*) {
         
         statusText.Text := "Status: Script Enabled - Press " globalToggleInput.Value " to toggle"
     } else {
+        ; Disable manual key press tracking hotkeys
+        try Hotkey "$1", "Off"
+        try Hotkey "$2", "Off"
+        try Hotkey "$3", "Off"
+        try Hotkey "$4", "Off"
+        try Hotkey "$5", "Off"
+        
         ; Disable all keys
         StopAllKeys()
         statusText.Text := "Status: Script Disabled"
@@ -182,17 +238,30 @@ ToggleMasterScript(*) {
 
 ; Toggle individual key
 ToggleKey(keyNum) {
-    global keyStates, isScriptEnabled
+    global keyStates, isScriptEnabled, keyIntervals, keyHeldDown
     
     keyStates[keyNum] := keyControls[keyNum].checkbox.Value
     
     ; Only start/stop timers if script is enabled
     if isScriptEnabled {
         if keyStates[keyNum] {
-            ; Start timer for this key
-            SetTimer () => SendKey(keyNum), keyIntervals[keyNum]
-            statusText.Text := "Status: Key " keyNum " enabled"
+            ; Check if interval is 0 (hold mode)
+            if keyIntervals[keyNum] = 0 {
+                ; Hold the key down
+                Send "{" keyNum " down}"
+                keyHeldDown[keyNum] := true
+                statusText.Text := "Status: Key " keyNum " held down"
+            } else {
+                ; Start timer for this key
+                SetTimer () => SendKey(keyNum), keyIntervals[keyNum]
+                statusText.Text := "Status: Key " keyNum " enabled"
+            }
         } else {
+            ; Release held key if it was held
+            if keyHeldDown[keyNum] {
+                Send "{" keyNum " up}"
+                keyHeldDown[keyNum] := false
+            }
             ; Stop timer for this key
             SetTimer () => SendKey(keyNum), 0
             statusText.Text := "Status: Key " keyNum " disabled"
@@ -204,17 +273,40 @@ ToggleKey(keyNum) {
 
 ; Update key interval
 UpdateKeyInterval(keyNum) {
-    global keyIntervals, keyStates
+    global keyIntervals, keyStates, keyHeldDown, isScriptEnabled
     
     try {
         newInterval := Integer(keyControls[keyNum].interval.Value)
-        if newInterval > 0 {
+        if newInterval >= 0 {
+            oldInterval := keyIntervals[keyNum]
             keyIntervals[keyNum] := newInterval
             
-            ; Restart timer if key is enabled
-            if keyStates[keyNum] {
-                SetTimer () => SendKey(keyNum), 0
-                SetTimer () => SendKey(keyNum), keyIntervals[keyNum]
+            ; Only update if key is enabled and script is running
+            if keyStates[keyNum] && isScriptEnabled {
+                ; Handle transition from hold mode to tap mode
+                if oldInterval = 0 && newInterval > 0 {
+                    ; Release the held key
+                    if keyHeldDown[keyNum] {
+                        Send "{" keyNum " up}"
+                        keyHeldDown[keyNum] := false
+                    }
+                    ; Start timer
+                    SetTimer () => SendKey(keyNum), keyIntervals[keyNum]
+                }
+                ; Handle transition from tap mode to hold mode
+                else if oldInterval > 0 && newInterval = 0 {
+                    ; Stop timer
+                    SetTimer () => SendKey(keyNum), 0
+                    ; Hold the key down
+                    Send "{" keyNum " down}"
+                    keyHeldDown[keyNum] := true
+                }
+                ; Handle tap mode interval change
+                else if newInterval > 0 {
+                    ; Restart timer with new interval
+                    SetTimer () => SendKey(keyNum), 0
+                    SetTimer () => SendKey(keyNum), keyIntervals[keyNum]
+                }
             }
         }
     } catch {
@@ -223,13 +315,58 @@ UpdateKeyInterval(keyNum) {
     }
 }
 
+; Update key cooldown
+UpdateKeyCooldown(keyNum) {
+    global keyCooldowns
+    
+    try {
+        newCooldown := Integer(keyControls[keyNum].cooldown.Value)
+        if newCooldown >= 0 {
+            keyCooldowns[keyNum] := newCooldown
+        }
+    } catch {
+        ; Invalid input, revert to previous value
+        keyControls[keyNum].cooldown.Value := keyCooldowns[keyNum]
+    }
+}
+
 ; Send key function
 SendKey(keyNum) {
-    global keyStates, isScriptEnabled
+    global keyStates, isScriptEnabled, keyCooldowns, lastManualPress, keyIntervals
     
     if !(isScriptEnabled && keyStates[keyNum])
         return
+    
+    ; Ignore cooldown if interval is 0 (hold mode)
+    if keyIntervals[keyNum] > 0 {
+        ; Check cooldown for keys 1-5
+        if keyNum >= 1 && keyNum <= 5 {
+            cooldown := keyCooldowns[keyNum]
+            if cooldown > 0 {
+                currentTime := A_TickCount
+                timeSinceLastPress := currentTime - lastManualPress[keyNum]
+                
+                ; If key was pressed manually within cooldown window, skip
+                if timeSinceLastPress < cooldown {
+                    return
+                }
+            }
+        }
+    }
         
+    Send "{" keyNum "}"
+}
+
+; Track manual key press
+TrackManualKeyPress(keyNum) {
+    global lastManualPress, keyCooldowns
+    
+    ; Only track if cooldown is enabled for this key
+    if keyCooldowns[keyNum] > 0 {
+        lastManualPress[keyNum] := A_TickCount
+    }
+    
+    ; Pass through the key press
     Send "{" keyNum "}"
 }
 
@@ -388,30 +525,28 @@ RunRightClick() {
 
 ; Start all enabled keys
 StartAllKeys(*) {
-    global isScriptEnabled
+    global isScriptEnabled, keyHeldDown
     
     if !isScriptEnabled {
         statusText.Text := "Status: Enable script first"
         return
     }
     
-    if keyStates[1] {
-        SetTimer () => SendKey(1), keyIntervals[1]
-    }
-    if keyStates[2] {
-        SetTimer () => SendKey(2), keyIntervals[2]
-    }
-    if keyStates[3] {
-        SetTimer () => SendKey(3), keyIntervals[3]
-    }
-    if keyStates[4] {
-        SetTimer () => SendKey(4), keyIntervals[4]
-    }
-    if keyStates[5] {
-        SetTimer () => SendKey(5), keyIntervals[5]
-    }
-    if keyStates[6] {
-        SetTimer () => SendKey(6), keyIntervals[6]
+    ; Start all enabled keys (timers or hold mode)
+    Loop 6 {
+        keyNum := A_Index
+        if keyStates[keyNum] {
+            if keyIntervals[keyNum] = 0 {
+                ; Hold mode
+                if !keyHeldDown[keyNum] {
+                    Send "{" keyNum " down}"
+                    keyHeldDown[keyNum] := true
+                }
+            } else {
+                ; Timer mode
+                SetTimer () => SendKey(keyNum), keyIntervals[keyNum]
+            }
+        }
     }
     
     if dodgeEnabled {
@@ -431,6 +566,9 @@ StartAllKeys(*) {
 
 ; Stop all keys
 StopAllKeys(*) {
+    global keyHeldDown
+    
+    ; Stop all timers
     SetTimer () => SendKey(1), 0
     SetTimer () => SendKey(2), 0
     SetTimer () => SendKey(3), 0
@@ -440,6 +578,16 @@ StopAllKeys(*) {
     SetTimer RunDodge, 0
     SetTimer RunLeftClick, 0
     SetTimer RunRightClick, 0
+    
+    ; Release all held keys
+    Loop 6 {
+        keyNum := A_Index
+        if keyHeldDown[keyNum] {
+            Send "{" keyNum " up}"
+            keyHeldDown[keyNum] := false
+        }
+    }
+    
     statusText.Text := "Status: All keys stopped"
 }
 
